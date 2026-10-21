@@ -40,14 +40,136 @@ export function estado(n, entregas, hoy = todayStr()) {
   return { tipo, texto, orden: d, ultima, prox, dias: d };
 }
 
-/** Vendidos de cada entrega = piezas dejadas − sobrantes anotados en la visita siguiente. */
+/* ---------- tipos de brownie ---------- */
+export const TIPOS = [
+  { id: "normal", nombre: "Normal", corto: "N" },
+  { id: "sinAzucar", nombre: "Sin azúcar", corto: "SA" },
+  { id: "proteina", nombre: "Proteína", corto: "P" }
+];
+const ceros = () => ({ normal: 0, sinAzucar: 0, proteina: 0 });
+export const totalTipos = o => (o ? TIPOS.reduce((s, t) => s + (Number(o[t.id]) || 0), 0) : 0);
+
+/** Piezas dejadas por tipo. Las entregas anteriores a los tipos (solo `cantidad`) cuentan como Normal. */
+export function piezas(e) {
+  if (e.tipos) { const o = ceros(); TIPOS.forEach(t => { o[t.id] = Number(e.tipos[t.id]) || 0; }); return o; }
+  return Object.assign(ceros(), { normal: Number(e.cantidad) || 0 });
+}
+/** Sobrantes por tipo recogidos en esta visita (de la entrega anterior), o null si no se contaron. */
+export function sobrantes(e) {
+  if (e.sobrantes) { const o = ceros(); TIPOS.forEach(t => { o[t.id] = Number(e.sobrantes[t.id]) || 0; }); return o; }
+  if (e.devueltos != null && e.devueltos !== "") return Object.assign(ceros(), { normal: Number(e.devueltos) || 0 });
+  return null;
+}
+
+/**
+ * Valida lo capturado en el formulario: cada campo vacío cuenta como 0; si no, debe ser un entero ≥ 0.
+ * `requiereAlguno`: al menos una pieza en total (para las piezas entregadas).
+ * Devuelve { ok, valores, errores: {tipoId: mensaje}, error }.
+ */
+export function validarCantidades(raw, { requiereAlguno = false } = {}) {
+  const valores = ceros(), errores = {};
+  TIPOS.forEach(t => {
+    const v = raw[t.id] == null ? "" : String(raw[t.id]).trim();
+    if (v === "") return;
+    if (!/^\d+$/.test(v)) { errores[t.id] = "Escribe un número entero de 0 o más."; return; }
+    const n = Number(v);
+    if (n > 9999) { errores[t.id] = "Máximo 9999."; return; }
+    valores[t.id] = n;
+  });
+  let error = null;
+  if (Object.keys(errores).length) error = "Revisa las cantidades marcadas.";
+  else if (requiereAlguno && totalTipos(valores) === 0) error = "Registra al menos un brownie entregado.";
+  return { ok: !error, valores, errores, error };
+}
+
+/**
+ * Resultado de cada entrega de un negocio, por tipo.
+ * Vendidos = piezas dejadas − sobrantes anotados en la visita siguiente (null mientras no haya visita siguiente con sobrantes).
+ */
 export function resultados(entregas, negocioId) {
   const es = entregasDe(entregas, negocioId).slice().reverse();
   return es.map((e, i) => {
-    const sig = es[i + 1];
-    const known = sig && sig.devueltos != null && sig.devueltos !== "";
-    return Object.assign({}, e, { vendidos: known ? Math.max(0, Number(e.cantidad) - Number(sig.devueltos)) : null });
+    const p = piezas(e), sig = es[i + 1], s = sig ? sobrantes(sig) : null;
+    let vendidosTipos = null;
+    if (s) { vendidosTipos = ceros(); TIPOS.forEach(t => { vendidosTipos[t.id] = Math.max(0, p[t.id] - s[t.id]); }); }
+    return Object.assign({}, e, {
+      piezas: p,
+      total: totalTipos(p),
+      vendidosTipos,
+      vendidos: vendidosTipos ? totalTipos(vendidosTipos) : null
+    });
   });
+}
+
+/* ---------- estadísticas ---------- */
+export const RANGOS = [
+  { id: "7", nombre: "7 días", dias: 7 },
+  { id: "15", nombre: "15 días", dias: 15 },
+  { id: "30", nombre: "30 días", dias: 30 },
+  { id: "all", nombre: "Todo", dias: null }
+];
+/** Primer día incluido en el rango (los últimos N días contando hoy). */
+export function desdeRango(rango, hoy = todayStr()) {
+  const r = RANGOS.find(x => x.id === rango);
+  return !r || r.dias == null ? "0000-01-01" : addDays(hoy, -(r.dias - 1));
+}
+
+const acumulador = () => ({ entregadas: 0, vendidos: 0, base: 0 });
+const pct = a => (a.base ? Math.round(a.vendidos / a.base * 100) : null);
+
+/**
+ * Estadísticas del rango, por tipo y por negocio.
+ * "base" = piezas de las entregas cuya venta ya se conoce; el % vendido se calcula sobre esa base.
+ */
+export function estadisticas(negocios, entregas, { rango = "30", hoy = todayStr() } = {}) {
+  const desde = desdeRango(rango, hoy);
+  const en = e => e.fecha >= desde && e.fecha <= hoy;
+  const total = Object.assign(acumulador(), { visitas: 0 });
+  const porTipo = {}; TIPOS.forEach(t => { porTipo[t.id] = acumulador(); });
+  const porNegocio = [];
+  negocios.forEach(n => {
+    const rs = resultados(entregas, n.id).filter(en);
+    if (!rs.length) return;
+    const fila = Object.assign(acumulador(), { n, visitas: rs.length, tipos: {} });
+    TIPOS.forEach(t => { fila.tipos[t.id] = acumulador(); });
+    rs.forEach(r => {
+      TIPOS.forEach(t => {
+        const q = r.piezas[t.id], ft = fila.tipos[t.id], gt = porTipo[t.id];
+        ft.entregadas += q; gt.entregadas += q;
+        if (r.vendidosTipos) {
+          const v = r.vendidosTipos[t.id];
+          ft.vendidos += v; ft.base += q; gt.vendidos += v; gt.base += q;
+        }
+      });
+      fila.entregadas += r.total;
+      if (r.vendidosTipos) { fila.vendidos += r.vendidos; fila.base += r.total; }
+    });
+    fila.pct = pct(fila);
+    fila.promedio = Math.round(fila.entregadas / fila.visitas);
+    TIPOS.forEach(t => { fila.tipos[t.id].pct = pct(fila.tipos[t.id]); });
+    total.entregadas += fila.entregadas; total.vendidos += fila.vendidos; total.base += fila.base; total.visitas += fila.visitas;
+    porNegocio.push(fila);
+  });
+  porNegocio.sort((a, b) => b.entregadas - a.entregadas || a.n.nombre.localeCompare(b.n.nombre, "es"));
+  TIPOS.forEach(t => {
+    porTipo[t.id].pct = pct(porTipo[t.id]);
+    porTipo[t.id].participacion = total.entregadas ? Math.round(porTipo[t.id].entregadas / total.entregadas * 100) : 0;
+  });
+  total.pct = pct(total);
+  return { desde, hasta: hoy, total, porTipo, porNegocio, top: porNegocio[0] || null };
+}
+
+/** Piezas por mes y por tipo, últimos `meses` meses. */
+export function porMes(entregas, { meses = 6, hoy = todayStr() } = {}) {
+  const [y, m] = hoy.split("-").map(Number), out = [];
+  for (let i = meses - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(y, m - 1 - i, 1));
+    const clave = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1);
+    const tipos = ceros();
+    entregas.filter(e => e.fecha.startsWith(clave)).forEach(e => { const p = piezas(e); TIPOS.forEach(t => { tipos[t.id] += p[t.id]; }); });
+    out.push({ mes: clave, tipos, total: totalTipos(tipos) });
+  }
+  return out;
 }
 
 /**

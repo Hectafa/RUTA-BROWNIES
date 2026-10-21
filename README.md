@@ -8,9 +8,13 @@ Los datos se guardan en el propio celular; no necesita internet ni cuenta.
 ## Qué hace
 
 - **Ruta:** negocios ordenados por urgencia (atrasados, hoy, próximos 3 días, al día).
-- **Registrar entrega:** fecha, piezas dejadas y sobrantes de la entrega anterior (para calcular ventas).
+- **Registrar entrega:** fecha y cuántos brownies se dejaron de cada tipo: **Normal, Sin azúcar y Proteína**.
+  Solo se aceptan números enteros de 0 o más, y al menos un brownie en total. Opcionalmente, los sobrantes de
+  la entrega anterior por tipo (para calcular ventas).
 - **Negocios:** dirección, encargado, teléfono, notas y cada cuántos días se entrega (15 por defecto).
-- **Estadísticas:** piezas entregadas y vendidas por negocio, porcentaje de venta y piezas por mes.
+- **Estadísticas** de los últimos **7, 15 o 30 días, o Todo**: piezas entregadas y vendidas por tipo de brownie
+  y por negocio, porcentaje de venta y piezas por mes.
+- **Modo claro y oscuro:** botón de luna/sol arriba a la derecha. La app recuerda tu elección.
 - **Recordatorio de cada mañana:** botón de la campana arriba a la derecha. Eliges la hora; ese día llega una
   notificación con los negocios que tocan o están atrasados. Si no toca ninguno, no llega nada.
   Los avisos se programan en el celular para los próximos 30 días y se recalculan cada vez que registras algo o abres la app,
@@ -57,6 +61,7 @@ npm run sync          # compila src/ → www/app.js y lo copia a android/ e ios/
 npx cap open android
 ```
 
-- `src/core.js`: fechas, estado de cada negocio, ventas y plan de recordatorios (sin dependencias).
+- `src/core.js`: fechas, estado de cada negocio, tipos de brownie, validación, ventas, estadísticas y plan de recordatorios (sin dependencias).
+- `test/`: pruebas de recordatorios y de entregas/estadísticas (`npm test`, también corren en cada compilación).
 - `src/app.js`: pantallas, guardado en el celular (`@capacitor/preferences`) y notificaciones (`@capacitor/local-notifications`).
 - `www/`: `index.html` y `style.css`.

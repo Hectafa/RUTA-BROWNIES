@@ -1,0 +1,10 @@
+{
+  "appId": "mx.rutabrownies.app",
+  "appName": "Ruta de Brownies",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "iconColor": "#5E3218"
+    }
+  }
+}

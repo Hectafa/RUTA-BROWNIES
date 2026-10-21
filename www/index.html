@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F6F2EE">
+<title>Ruta de Brownies</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Ruta de Brownies</h1>
+      <button class="bell" id="bell" aria-label="Recordatorio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span id="bellHora">08:00</span>
+      </button>
+    </div>
+    <span class="today" id="todayLabel"></span>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-view="ruta">Ruta</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="negocios">Negocios</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="stats">Estadísticas</button>
+    </nav>
+  </div>
+</header>
+<main><div class="wrap" id="view"></div></main>
+<button class="btn primary fab" id="fab">+ Registrar entrega</button>
+<div id="sheetHost"></div>
+<div id="toastHost"></div>
+<script src="app.js"></script>
+</body>
+</html>

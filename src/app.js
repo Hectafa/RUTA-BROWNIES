@@ -4,7 +4,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import {
   DEFAULT_FREQ, todayStr, diffDays, addDays, fmt, fmtLong,
   entregasDe as _entregasDe, estado as _estado, resultados as _resultados, planRecordatorios,
-  TIPOS, piezas, totalTipos, validarCantidades, RANGOS, estadisticas, porMes
+  TIPOS, piezas, totalTipos, validarCantidades, RANGOS, estadisticas, porMes, DIAS_ANTICIPACION
 } from "./core.js";
 
 const NATIVO = Capacitor.isNativePlatform();
@@ -355,7 +355,10 @@ async function ajustesForm() {
           ? '<div class="notice">El aviso puede llegar con unos minutos de diferencia. Para que llegue a la hora exacta, permite alarmas exactas.<button type="button" class="btn small" id="permExacto">Permitir</button></div>'
           : '';
   abrirHoja('<h3>Recordatorio de cada mañana</h3>' +
-    '<p class="hint">Cada día, a la hora que elijas, el celular te avisa qué negocios toca visitar o están atrasados. Si ese día no toca ninguno, no llega aviso.</p>' +
+    '<p class="hint">A la hora que elijas, el celular te avisa:</p>' +
+    '<ul class="avisos-tipos"><li><span class="pill today">Entrega</span> el día que toca y mientras siga atrasada.</li>' +
+    '<li><span class="pill soon">Preparar</span> ' + DIAS_ANTICIPACION + ' días antes, con lo que dejaste la última vez en ese negocio.</li></ul>' +
+    '<p class="hint">Si un día no hay nada de esto, no llega aviso.</p>' +
     estadoPermiso +
     '<form id="fAjustes">' +
     '<label class="check"><input id="aActivo" type="checkbox" ' + (S.ajustes.recordatorio ? 'checked' : '') + '> Recibir el recordatorio</label>' +
@@ -364,8 +367,11 @@ async function ajustesForm() {
     '<div class="row"><button type="button" class="btn" data-close>Cerrar</button><button class="btn primary">Guardar</button></div></div></form>' +
     '<h2 class="section-h">Próximos avisos</h2>' +
     (plan.length
-      ? '<div class="hist">' + plan.map(p => '<div class="hist-row two-col"><div class="d">' + fmtLong(p.fecha) + ' · ' + esc(S.ajustes.hora) + '<small>' + esc(p.body) + '</small></div><span class="pill today">' + p.total + '</span></div>').join("") + '</div>'
-      : '<div class="empty">No hay entregas pendientes en los próximos 30 días.</div>'));
+      ? '<div class="hist">' + plan.map(p => '<div class="hist-row two-col"><div class="d">' + fmtLong(p.fecha) + ' · ' + esc(S.ajustes.hora) +
+        '<small>' + esc(p.title) + '</small><small>' + esc(p.body) + '</small></div><span class="row pills">' +
+        (p.total ? '<span class="pill today" title="Entregas">' + p.total + '</span>' : '') +
+        (p.preparar ? '<span class="pill soon" title="Por preparar">' + p.preparar + '</span>' : '') + '</span></div>').join("") + '</div>'
+      : '<div class="empty">No hay entregas ni preparaciones en los próximos 30 días.</div>'));
 }
 
 async function probarNotificacion() {

@@ -15,8 +15,10 @@ Los datos se guardan en el propio celular; no necesita internet ni cuenta.
 - **Estadísticas** de los últimos **7, 15 o 30 días, o Todo**: piezas entregadas y vendidas por tipo de brownie
   y por negocio, porcentaje de venta y piezas por mes.
 - **Modo claro y oscuro:** botón de luna/sol arriba a la derecha. La app recuerda tu elección.
-- **Recordatorio de cada mañana:** botón de la campana arriba a la derecha. Eliges la hora; ese día llega una
-  notificación con los negocios que tocan o están atrasados. Si no toca ninguno, no llega nada.
+- **Recordatorio de cada mañana:** botón de la campana arriba a la derecha. Eliges la hora y llega una notificación:
+  - el día que toca la entrega y cada día que siga atrasada;
+  - **5 días antes**, para preparar los brownies, con lo que se dejó la última vez en ese negocio como referencia.
+  Si un día coinciden, van en el mismo aviso. Si no hay nada, no llega aviso.
   Los avisos se programan en el celular para los próximos 30 días y se recalculan cada vez que registras algo o abres la app,
   así que si dejas de abrirla más de un mes, ábrela una vez para renovarlos.
 

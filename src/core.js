@@ -178,7 +178,17 @@ export function porMes(entregas, { meses = 6, hoy = todayStr() } = {}) {
  * Los días sin entregas pendientes no generan aviso.
  * Se recalcula cada vez que cambian los datos, así que registrar una entrega quita ese negocio de los avisos.
  */
-export function planRecordatorios(negocios, entregas, { hora = "08:00", dias = 30, ahora = new Date(), idBase = 1000 } = {}) {
+export const DIAS_ANTICIPACION = 5;
+
+const lista = nombres => nombres.length > 3 ? nombres.slice(0, 3).join(", ") + " y " + (nombres.length - 3) + " más" : nombres.join(", ");
+
+/**
+ * Un aviso por día (a lo más) que junta dos cosas:
+ * - Entregas de hoy, atrasadas o primeras entregas pendientes.
+ * - Aviso para preparar: negocios cuya próxima entrega cae dentro de `anticipacion` días exactos,
+ *   con lo que se dejó la última vez como referencia.
+ */
+export function planRecordatorios(negocios, entregas, { hora = "08:00", dias = 30, ahora = new Date(), idBase = 1000, anticipacion = DIAS_ANTICIPACION } = {}) {
   const [hh, mm] = hora.split(":").map(Number);
   const plan = [];
   const base = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
@@ -187,25 +197,54 @@ export function planRecordatorios(negocios, entregas, { hora = "08:00", dias = 3
     const at = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i, hh, mm || 0, 0, 0);
     if (at <= ahora) continue;
     const dia = ymd(at);
-    const pendientes = activos
-      .map(n => ({ n, st: estado(n, entregas, dia) }))
+    const estados = activos.map(n => ({ n, st: estado(n, entregas, dia) }));
+    const pendientes = estados
       .filter(x => x.st.tipo === "new" || x.st.dias <= 0)
       .sort((a, b) => a.st.orden - b.st.orden);
-    if (!pendientes.length) continue;
+    const preparar = anticipacion > 0
+      ? estados.filter(x => x.st.dias === anticipacion).sort((a, b) => a.n.nombre.localeCompare(b.n.nombre, "es"))
+      : [];
+    if (!pendientes.length && !preparar.length) continue;
+
     const etiqueta = x =>
       x.st.tipo === "new" ? x.n.nombre + " (primera entrega)"
       : x.st.dias === 0 ? x.n.nombre
       : x.n.nombre + " (atrasada " + (-x.st.dias) + " d)";
     const nombres = pendientes.map(etiqueta);
-    const corto = nombres.length > 3 ? nombres.slice(0, 3).join(", ") + " y " + (nombres.length - 3) + " más" : nombres.join(", ");
+    const fechaEntrega = addDays(dia, anticipacion);
+    const cuando = fmtLong(fechaEntrega);
+    const prepNombres = preparar.map(x => x.n.nombre);
+    const prepDetalle = preparar.map(x => {
+      const p = piezas(x.st.ultima), d = TIPOS.filter(t => p[t.id]).map(t => p[t.id] + " " + t.nombre).join(", ");
+      return "• " + x.n.nombre + (d ? " — la última vez: " + d : "");
+    });
+
+    let title;
+    if (pendientes.length && preparar.length) {
+      title = (pendientes.length === 1 ? "Hoy toca 1 entrega" : "Hoy tocan " + pendientes.length + " entregas") +
+        " · prepara " + preparar.length + " para el " + cuando;
+    } else if (pendientes.length) {
+      title = pendientes.length === 1 ? "Hoy toca 1 entrega de brownies" : "Hoy tocan " + pendientes.length + " entregas de brownies";
+    } else {
+      title = "Prepara brownies: " + (preparar.length === 1 ? "1 entrega" : preparar.length + " entregas") + " el " + cuando;
+    }
+    const partes = [];
+    if (nombres.length) partes.push(lista(nombres));
+    if (prepNombres.length) partes.push((nombres.length ? "Preparar para el " + cuando + ": " : "En " + anticipacion + " días: ") + lista(prepNombres));
+    const largo = [];
+    if (nombres.length) largo.push((prepNombres.length ? "Hoy:\n" : "") + nombres.map(s => "• " + s).join("\n"));
+    if (prepNombres.length) largo.push("Preparar para el " + cuando + " (en " + anticipacion + " días):\n" + prepDetalle.join("\n"));
+
     plan.push({
       id: idBase + i,
       at,
       fecha: dia,
-      title: pendientes.length === 1 ? "Hoy toca 1 entrega de brownies" : "Hoy tocan " + pendientes.length + " entregas de brownies",
-      body: corto,
-      largeBody: nombres.map(s => "• " + s).join("\n"),
-      total: pendientes.length
+      title,
+      body: partes.join(" · "),
+      largeBody: largo.join("\n\n"),
+      total: pendientes.length,
+      preparar: preparar.length,
+      fechaEntregaPreparar: preparar.length ? fechaEntrega : null
     });
   }
   return plan;

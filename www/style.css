@@ -164,3 +164,7 @@ table.tipos small{color:var(--muted)}
 .theme-btn[data-mode="oscuro"] .moon{display:none}
 .month .colstack{max-width:44px}
 @media (max-width:380px){.tipos-grid{gap:6px}.tipo-field > span{font-size:.76rem}}
+.avisos-tipos{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:.9rem}
+.avisos-tipos li{display:grid;grid-template-columns:5.6em 1fr;gap:10px;align-items:baseline}
+.avisos-tipos .pill{justify-content:center}
+.row.pills{gap:4px;flex-wrap:nowrap}

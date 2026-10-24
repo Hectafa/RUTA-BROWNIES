@@ -45,6 +45,7 @@ Apple solo permite instalar apps compiladas en una Mac con Xcode:
 ```bash
 npm install
 npx cap add ios
+npm run icons
 npm run sync
 npx cap open ios
 ```
@@ -67,3 +68,5 @@ npx cap open android
 - `test/`: pruebas de recordatorios y de entregas/estadísticas (`npm test`, también corren en cada compilación).
 - `src/app.js`: pantallas, guardado en el celular (`@capacitor/preferences`) y notificaciones (`@capacitor/local-notifications`).
 - `www/`: `index.html` y `style.css`.
+- `assets/`: ícono (logo koko lab) y pantalla de carga. Para cambiarlos, reemplaza estas imágenes; en la compilación
+  se generan todos los tamaños con `@capacitor/assets` (localmente: `npm run icons` después de `npx cap add android`).

@@ -7,7 +7,8 @@
   "scripts": {
     "build": "esbuild src/app.js --bundle --minify --format=iife --target=es2019 --outfile=www/app.js",
     "sync": "npm run build && npx cap sync",
-    "test": "node test/recordatorios.test.mjs && node test/entregas.test.mjs"
+    "test": "node test/recordatorios.test.mjs && node test/entregas.test.mjs",
+    "icons": "capacitor-assets generate --android --ios --iconBackgroundColor \"#ffffff\" --iconBackgroundColorDark \"#ffffff\" --splashBackgroundColor \"#ffffff\" --splashBackgroundColorDark \"#ffffff\""
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",
@@ -17,6 +18,7 @@
     "@capacitor/preferences": "8.0.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "8.5.3",
     "esbuild": "0.28.2"
   }

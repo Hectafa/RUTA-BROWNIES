@@ -30,10 +30,11 @@ jobs:
       - name: Probar lógica de recordatorios
         run: npm test
 
-      - name: Compilar la app web y copiarla a Android
+      - name: Compilar la app web, generar ícono y copiarla a Android
         run: |
           npm run build
           npx cap add android
+          npx capacitor-assets generate --android --iconBackgroundColor "#ffffff" --iconBackgroundColorDark "#ffffff" --splashBackgroundColor "#ffffff" --splashBackgroundColorDark "#ffffff"
           npx cap sync android
 
       - name: Compilar APK
